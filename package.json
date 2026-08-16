@@ -1,0 +1,47 @@
+{
+  "name": "lavender-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server resource for local FiveM and RedM development",
+  "private": true,
+  "license": "MIT",
+  "author": "Nimoa",
+  "homepage": "https://github.com/nimoalr/lavender-mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/nimoalr/lavender-mcp-server/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nimoalr/lavender-mcp-server.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "npm@10.9.2",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "licenses": "node scripts/generate-third-party-licenses.mjs",
+    "licenses:check": "node scripts/generate-third-party-licenses.mjs --check",
+    "package": "npm run build && npm run licenses && node scripts/package-release.mjs",
+    "verify": "npm run typecheck && npm test && npm run build && npm run licenses:check"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/express": "2.0.0",
+    "@modelcontextprotocol/node": "2.0.0",
+    "@modelcontextprotocol/server": "2.0.0",
+    "express": "5.2.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@citizenfx/client": "2.0.34833-1",
+    "@citizenfx/server": "2.0.34833-1",
+    "@types/express": "5.0.6",
+    "@types/node": "22.19.19",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}

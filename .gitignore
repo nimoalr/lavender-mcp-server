@@ -1,0 +1,10 @@
+node_modules/
+cache/
+dist/
+.release/
+.yarn.installed
+yarn.lock
+*.log
+.DS_Store
+.vscode/
+.idea/
