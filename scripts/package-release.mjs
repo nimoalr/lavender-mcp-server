@@ -17,7 +17,9 @@ const resourceRoot = path.join(releaseRoot, 'lavender-mcp-server');
 await rm(releaseRoot, { recursive: true, force: true });
 await mkdir(resourceRoot, { recursive: true });
 
-await cp(path.join(root, 'dist'), path.join(resourceRoot, 'dist'), { recursive: true });
+for (const directory of ['dist', 'runtime']) {
+    await cp(path.join(root, directory), path.join(resourceRoot, directory), { recursive: true });
+}
 
 for (const filename of [
     'fxmanifest.lua',

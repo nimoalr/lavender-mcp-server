@@ -1,5 +1,6 @@
 import { EVENT_RESULT, EVENT_TRIGGER } from '../shared/events';
 import { safeStringify } from '../shared/stringify';
+import { executeLuaInCurrentRuntime, type ExecResult } from '../shared/luaExecutor';
 
 type CallbackHandler = (...args: unknown[]) => unknown[] | Promise<unknown[]>;
 
@@ -27,14 +28,21 @@ onNet(EVENT_TRIGGER, async (name: string, requestId: number, ...args: unknown[])
     }
 });
 
-interface ExecResult {
-    ok: boolean;
-    value?: string;
-    error?: string;
-    output?: string[];
+registerClientCallback('execute_code', async (code, language) => [
+    await executeCodeOnClient(code, language),
+]);
+
+export async function executeCodeOnClient(code: unknown, language: unknown): Promise<ExecResult> {
+    if (language === 'lua') {
+        return executeLuaInCurrentRuntime(String(code));
+    }
+    if (language !== undefined && language !== 'javascript') {
+        return { ok: false, error: `Unsupported code language: ${String(language)}` };
+    }
+    return executeJavaScriptOnClient(String(code));
 }
 
-registerClientCallback('execute_code', async (code) => {
+async function executeJavaScriptOnClient(code: string): Promise<ExecResult> {
     // Per-call console capture for execute_code only.
     const output: string[] = [];
     const origLog = console.log;
@@ -58,17 +66,21 @@ registerClientCallback('execute_code', async (code) => {
 
     let result: ExecResult;
     try {
-        const fn = new Function(String(code));
+        const fn = new Function(code);
         const value = await fn();
-        result = { ok: true, value: safeStringify(value), output };
+        result = {
+            ok: true,
+            value: safeStringify(value),
+            output: output.length ? output : undefined,
+        };
     } catch (err) {
         const msg = err instanceof Error ? (err.stack ?? err.message) : String(err);
-        result = { ok: false, error: msg, output };
+        result = { ok: false, error: msg, output: output.length ? output : undefined };
     } finally {
         console.log = origLog;
         console.warn = origWarn;
         console.error = origError;
     }
 
-    return [result];
-});
+    return result;
+}

@@ -10,16 +10,19 @@ repository 'https://github.com/nimoalr/lavender-mcp-server'
 node_version '22'
 
 server_scripts {
+    'runtime/luaExecutor.lua',
     'dist/server.js'
 }
 
 client_scripts {
+    'runtime/luaExecutor.lua',
     'dist/client.js'
 }
 
 files {
     'dist/server.js',
     'dist/client.js',
+    'runtime/luaExecutor.lua',
 }
 
 convar_category 'Lavender MCP' {

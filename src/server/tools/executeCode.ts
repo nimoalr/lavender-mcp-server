@@ -3,27 +3,31 @@ import { BUILTIN_RESOURCE, registerTool } from '../registry';
 import { triggerClientCallback } from '../rpc';
 import { playerExists } from '../util/players';
 import { safeStringify } from '../../shared/stringify';
+import { executeLuaInCurrentRuntime, type ExecResult } from '../../shared/luaExecutor';
 
-interface ClientExecResult {
-    ok: boolean;
-    value?: string;
-    error?: string;
-    output?: string[];
-}
+type CodeLanguage = 'javascript' | 'lua';
 
 export function registerExecuteCode(): void {
     registerTool({
         name: 'execute_code',
         config: {
             description:
-                'Execute JavaScript in the server runtime or selected connected clients. Returns the value and console output. This is arbitrary code execution for local development only.',
+                "Execute JavaScript or Lua in Lavender's server runtime or on selected connected clients. Returns the value and direct console output. Code runs in Lavender's runtime, not another resource's private environment. This is arbitrary code execution for local development only.",
             inputSchema: z.object({
                 target: z
                     .union([z.literal('server'), z.array(z.number().int().nonnegative()).min(1)])
                     .describe(
                         'Where to run: the string "server", or an array of client server IDs.',
                     ),
-                code: z.string().describe('JavaScript source. Use `return <expr>` to capture a value.'),
+                language: z
+                    .enum(['javascript', 'lua'])
+                    .optional()
+                    .describe('Source language. Defaults to "javascript" for compatibility.'),
+                code: z
+                    .string()
+                    .describe(
+                        'Source code. Use `return <expr>` to capture a value. Lua execution is synchronous; create a thread for background work instead of yielding the chunk.',
+                    ),
                 timeoutMs: z
                     .number()
                     .min(100)
@@ -32,17 +36,22 @@ export function registerExecuteCode(): void {
                     .describe('Per-client timeout (clients only). Defaults to 10000.'),
             }),
         },
-        handler: async ({ target, code, timeoutMs }) => {
+        handler: async ({ target, language, code, timeoutMs }) => {
+            const selectedLanguage: CodeLanguage = language ?? 'javascript';
             if (target === 'server') {
-                return runOnServer(code);
+                return runOnServer(code, selectedLanguage);
             }
-            return runOnClients(target, code, timeoutMs ?? 10000);
+            return runOnClients(target, selectedLanguage, code, timeoutMs ?? 10000);
         },
         registeredBy: BUILTIN_RESOURCE,
     });
 }
 
-async function runOnServer(code: string) {
+export async function runOnServer(code: string, language: CodeLanguage) {
+    if (language === 'lua') {
+        return formatServerResult(executeLuaInCurrentRuntime(code));
+    }
+
     const output: string[] = [];
     const origLog = console.log;
     const origWarn = console.warn;
@@ -66,21 +75,19 @@ async function runOnServer(code: string) {
     try {
         const fn = new Function(code);
         const value = await fn();
-        const payload = {
+        const payload: ExecResult = {
             ok: true,
             value: safeStringify(value),
             output: output.length ? output : undefined,
         };
-        return {
-            content: [{ type: 'text' as const, text: `[server]\n${JSON.stringify(payload, null, 2)}` }],
-        };
+        return formatServerResult(payload);
     } catch (err) {
         const msg = err instanceof Error ? (err.stack ?? err.message) : String(err);
-        const payload = { ok: false, error: msg, output: output.length ? output : undefined };
-        return {
-            isError: true,
-            content: [{ type: 'text' as const, text: `[server]\n${JSON.stringify(payload, null, 2)}` }],
-        };
+        return formatServerResult({
+            ok: false,
+            error: msg,
+            output: output.length ? output : undefined,
+        });
     } finally {
         console.log = origLog;
         console.warn = origWarn;
@@ -88,7 +95,24 @@ async function runOnServer(code: string) {
     }
 }
 
-async function runOnClients(serverIds: number[], code: string, timeoutMs: number) {
+function formatServerResult(result: ExecResult) {
+    return {
+        ...(result.ok ? {} : { isError: true }),
+        content: [
+            {
+                type: 'text' as const,
+                text: `[server]\n${JSON.stringify(result, null, 2)}`,
+            },
+        ],
+    };
+}
+
+export async function runOnClients(
+    serverIds: number[],
+    language: CodeLanguage,
+    code: string,
+    timeoutMs: number,
+) {
     const results = await Promise.all(
         serverIds.map(async (serverId) => {
             if (!playerExists(serverId)) {
@@ -98,10 +122,10 @@ async function runOnClients(serverIds: number[], code: string, timeoutMs: number
                 const args = await triggerClientCallback(
                     serverId,
                     'execute_code',
-                    [code],
+                    [code, language],
                     { timeoutMs },
                 );
-                const result = (args[0] ?? {}) as ClientExecResult;
+                const result = (args[0] ?? {}) as ExecResult;
                 return { serverId, ...result };
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);

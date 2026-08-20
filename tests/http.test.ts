@@ -3,12 +3,14 @@ import type { Server } from 'node:http';
 import { z } from 'zod';
 import { createHttpApp, validatePort } from '../src/server/http';
 import { registerTool, unregisterTool } from '../src/server/registry';
+import { registerExecuteCode } from '../src/server/tools/executeCode';
 
 const TOKEN = 'a'.repeat(32);
 let server: Server;
 let baseUrl: string;
 
 beforeAll(async () => {
+    registerExecuteCode();
     registerTool({
         name: 'test_http_tool',
         config: {
@@ -34,6 +36,7 @@ afterAll(async () => {
         server.close((error) => (error ? reject(error) : resolve()));
     });
     unregisterTool('test_http_tool');
+    unregisterTool('execute_code');
 });
 
 describe('HTTP security boundary', () => {
@@ -110,6 +113,10 @@ describe('MCP protocol handling', () => {
                 resultType: 'complete',
                 tools: expect.arrayContaining([
                     expect.objectContaining({ name: 'test_http_tool' }),
+                    expect.objectContaining({
+                        name: 'execute_code',
+                        description: expect.stringContaining('JavaScript or Lua'),
+                    }),
                 ]),
             },
         });

@@ -1,6 +1,6 @@
 # lavender-mcp-server
 
-An MCP server packaged as a resource for local FiveM and RedM development. It allows an MCP client to inspect the server, manage resources, read console output, and execute JavaScript in server or connected-client runtimes.
+An MCP server packaged as a resource for local FiveM and RedM development. It allows an MCP client to inspect the server, manage resources, read console output, and execute JavaScript or Lua in server or connected-client runtimes.
 
 ## Security warning
 
@@ -129,7 +129,7 @@ For other clients, use their Streamable HTTP configuration and set the same Auth
 | `get_server_info` | Return server, game, runtime, uptime, and player-count information | None |
 | `list_clients` | List connected players and identifiers | None |
 | `get_client_info` | Return details for one server ID | None |
-| `execute_code` | Execute JavaScript on the server or selected clients | None |
+| `execute_code` | Execute code on the server or selected clients; `language` is `javascript` (default) or `lua` | None |
 | `get_console_logs` | Read recent server-console entries | None |
 | `list_resources` | List resources and their states | None |
 | `start_resource` | Start a resource through the native API | None |
@@ -143,6 +143,8 @@ For other clients, use their Streamable HTTP configuration and set the same Auth
 Resource lifecycle tools refuse to act on `lavender-mcp-server` itself.
 
 Server resources can also register custom namespaced MCP tools. See [EXTENDING.md](./EXTENDING.md) for the export API.
+
+Both languages execute inside Lavender's own runtime on the server or selected clients; they cannot access another resource's private variables. Use that resource's exports or a custom MCP tool when private state is required. Lua chunks execute synchronously, although they may create background threads.
 
 ## Client logs
 
