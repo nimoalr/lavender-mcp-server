@@ -182,6 +182,8 @@ npm run licenses    # regenerate third-party license notices
 
 `npm run package` prepares the release resource under `.release/lavender-mcp-server`.
 
+After CI succeeds on `main`, the release workflow reads the version from `package.json`. If that version has not been released, it creates the matching `v<version>` tag and publishes the packaged resource. Keep the versions in `package.json`, `package-lock.json`, and `fxmanifest.lua` aligned when preparing a release.
+
 ## License
 
 lavender-mcp-server is licensed under the [MIT License](./LICENSE). Bundled dependency notices are in [THIRD_PARTY_LICENSES.txt](./THIRD_PARTY_LICENSES.txt), and each GitHub release includes an SPDX JSON SBOM.
