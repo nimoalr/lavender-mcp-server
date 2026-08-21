@@ -4,7 +4,7 @@ game 'common'
 name 'lavender-mcp-server'
 author 'Nimoa'
 description 'Development-only MCP server resource for FiveM and RedM.'
-version '0.1.0'
+version '0.2.0'
 repository 'https://github.com/nimoalr/lavender-mcp-server'
 
 node_version '22'

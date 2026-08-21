@@ -46,7 +46,7 @@ describe('HTTP security boundary', () => {
         await expect(response.json()).resolves.toMatchObject({
             status: 'ok',
             serverName: 'lavender-mcp-server',
-            version: '0.1.0',
+            version: '0.2.0',
         });
     });
 
@@ -139,7 +139,7 @@ describe('MCP protocol handling', () => {
             id: 1,
             result: {
                 protocolVersion: '2025-11-25',
-                serverInfo: { name: 'lavender-mcp-server', version: '0.1.0' },
+                serverInfo: { name: 'lavender-mcp-server', version: '0.2.0' },
                 instructions: expect.stringContaining(
                     String.raw`%LOCALAPPDATA%\FiveM\FiveM.app\logs\CitizenFX_log_*.log`,
                 ),
