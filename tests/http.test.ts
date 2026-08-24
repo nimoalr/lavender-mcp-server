@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { createHttpApp, validatePort } from '../src/server/http';
 import { registerTool, unregisterTool } from '../src/server/registry';
 import { registerExecuteCode } from '../src/server/tools/executeCode';
+import { VERSION } from '../src/server/version';
 
 const TOKEN = 'a'.repeat(32);
 let server: Server;
@@ -46,7 +47,7 @@ describe('HTTP security boundary', () => {
         await expect(response.json()).resolves.toMatchObject({
             status: 'ok',
             serverName: 'lavender-mcp-server',
-            version: '0.2.0',
+            version: VERSION,
         });
     });
 
@@ -139,7 +140,7 @@ describe('MCP protocol handling', () => {
             id: 1,
             result: {
                 protocolVersion: '2025-11-25',
-                serverInfo: { name: 'lavender-mcp-server', version: '0.2.0' },
+                serverInfo: { name: 'lavender-mcp-server', version: VERSION },
                 instructions: expect.stringContaining(
                     String.raw`%LOCALAPPDATA%\FiveM\FiveM.app\logs\CitizenFX_log_*.log`,
                 ),
