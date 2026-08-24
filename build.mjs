@@ -15,7 +15,15 @@ const common = {
 
 const configs = [
     { ...common, entryPoints: ['src/server/index.ts'], outfile: 'dist/server.js' },
-    { ...common, entryPoints: ['src/client/index.ts'], outfile: 'dist/client.js' },
+    {
+        ...common,
+        // The game client executes this as a plain script and does not provide
+        // Node's CommonJS globals (`module`, `exports`, or `require`).
+        platform: 'browser',
+        format: 'iife',
+        entryPoints: ['src/client/index.ts'],
+        outfile: 'dist/client.js',
+    },
 ];
 
 await rm('dist', { recursive: true, force: true });

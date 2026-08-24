@@ -32,6 +32,14 @@ describe('release layout', () => {
         expect(luaSource).toContain(`exports('${LUA_EXECUTOR_EXPORT}', executeLua)`);
     });
 
+    it('builds the game client as a plain script rather than CommonJS', async () => {
+        const buildScript = await readFile('build.mjs', 'utf8');
+
+        expect(buildScript).toMatch(
+            /platform: 'browser',\s+format: 'iife',\s+entryPoints: \['src\/client\/index\.ts'\]/,
+        );
+    });
+
     it('creates a version tag and release after successful main-branch CI', async () => {
         const workflow = await readFile('.github/workflows/release.yml', 'utf8');
 
