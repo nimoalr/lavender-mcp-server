@@ -46,6 +46,10 @@ describe('release layout', () => {
         expect(workflow).toContain('workflow_run:');
         expect(workflow).toContain('github.event.workflow_run.conclusion == \'success\'');
         expect(workflow).toContain('github.event.workflow_run.head_branch == \'main\'');
+        expect(workflow).toContain('version="${base_version%.*}.${GITHUB_RUN_NUMBER}"');
+        expect(workflow).toContain(
+            'npm version "$RELEASE_VERSION" --no-git-tag-version --allow-same-version',
+        );
         expect(workflow).toContain('gh release create "$RELEASE_TAG"');
         expect(workflow).toContain('--target "$RELEASE_COMMIT"');
         expect(workflow).not.toMatch(/^\s+tags:/m);

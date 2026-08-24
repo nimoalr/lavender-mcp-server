@@ -34,13 +34,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          version="$(node -p "require('./package.json').version")"
+          base_version="$(node -p "require('./package.json').version")"
           manifest_version="$(node -e "const fs=require('fs'); const match=/\\bversion\\s+['\"]([^'\"]+)['\"]/.exec(fs.readFileSync('fxmanifest.lua','utf8')); process.stdout.write(match?.[1] ?? '')")"
+          version="${base_version%.*}.${GITHUB_RUN_NUMBER}"
           tag="v${version}"
           commit="$(git rev-parse HEAD)"
 
-          test "$version" = "$manifest_version" || {
-            echo "package version $version does not match manifest version $manifest_version" >&2
+          test "$base_version" = "$manifest_version" || {
+            echo "package version $base_version does not match manifest version $manifest_version" >&2
             exit 1
           }
 
@@ -61,7 +62,6 @@ jobs:
             tag_commit="$(git rev-list -n 1 "$tag")"
             test "$tag_commit" = "$commit" || {
               echo "Tag $tag already points to $tag_commit, not release commit $commit." >&2
-              echo "Bump the package and manifest versions before publishing another release." >&2
               exit 1
             }
           fi
@@ -76,6 +76,23 @@ jobs:
       - name: Install dependencies
         if: steps.version.outputs.release_exists == 'false'
         run: npm ci
+
+      - name: Stamp release version
+        if: steps.version.outputs.release_exists == 'false'
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          npm version "$RELEASE_VERSION" --no-git-tag-version --allow-same-version
+          node - "$RELEASE_VERSION" <<'NODE'
+          const fs = require('fs');
+          const version = process.argv[2];
+          const path = 'fxmanifest.lua';
+          const source = fs.readFileSync(path, 'utf8');
+          const pattern = /\bversion\s+(['"])[^'"]+\1/;
+          if (!pattern.test(source)) throw new Error('Could not find fxmanifest.lua version');
+          fs.writeFileSync(path, source.replace(pattern, `version '${version}'`));
+          NODE
 
       - name: Verify source and dependencies
         if: steps.version.outputs.release_exists == 'false'
