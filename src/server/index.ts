@@ -11,6 +11,9 @@ setImmediate(async () => {
         registerExports();
         initRpc();
         await startHttpServer();
+        if (isListening()) {
+            emit('lavender_mcp:requestToolRegistration');
+        }
     } catch (err) {
         console.error('^1[lavender-mcp]^7 failed to start:', err);
     }
